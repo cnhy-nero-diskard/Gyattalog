@@ -1,0 +1,30 @@
+export default function PlaceholderPoster() {
+  return (
+    <svg
+      width="300"
+      height="450"
+      viewBox="0 0 300 450"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+    >
+      <rect width="300" height="450" fill="#E5E7EB" />
+      <rect width="300" height="450" fill="#9CA3AF" fillOpacity="0.1" />
+      <path
+        d="M150 150L120 210H180L150 150Z"
+        fill="#6B7280"
+      />
+      <rect x="120" y="210" width="60" height="60" fill="#6B7280" />
+      <text
+        x="150"
+        y="300"
+        textAnchor="middle"
+        fill="#6B7280"
+        fontSize="14"
+        fontFamily="system-ui, sans-serif"
+      >
+        No Image
+      </text>
+    </svg>
+  );
+}
