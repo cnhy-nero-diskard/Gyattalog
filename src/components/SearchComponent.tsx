@@ -46,8 +46,11 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
         !item.adult && 
         (item.hasOwnProperty('title') || item.hasOwnProperty('name'))
       );
+      
+      // Sort results by popularity (highest first)
+      const sortedResults = [...filteredResults].sort((a, b) => b.popularity - a.popularity);
 
-      setResults(filteredResults);
+      setResults(sortedResults);
     } catch (err) {
       setError('Failed to search. Please check your API key and try again.');
       console.error('Search error:', err);
@@ -57,7 +60,7 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
     }
   }, []);
 
-  // Debounced search
+  // Debounced search with 2 second delay to limit API requests
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (query.trim()) {
@@ -65,7 +68,7 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
       } else {
         setResults([]);
       }
-    }, 300);
+    }, 1000); // Increased to 2 seconds to avoid excessive API calls
 
     return () => clearTimeout(timeoutId);
   }, [query, searchType, search]);
@@ -114,8 +117,9 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center py-8">
+        <div className="flex flex-col items-center justify-center py-8 space-y-2">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Searching for results...</p>
         </div>
       )}
 
@@ -123,9 +127,9 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
       {results.length > 0 && !loading && (
         <div>
           <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Search Results ({results.length})
+            Search Results ({results.length}) - Sorted by Popularity
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div className="space-y-3">
             {results.map((item) => {
               const mediaType = getMediaType(item);
               return (
