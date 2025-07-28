@@ -30,7 +30,8 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
   const [error, setError] = useState<string | null>(null);
   const cacheRef = useRef<{ [key: string]: any[] }>({});
   const [searchType, setSearchType] = useState<'all' | 'movie' | 'tv'>('all');
-  const { addToWatchlist } = useCatalog();
+  const { addToWatchlist, catalog } = useCatalog();
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   const search = useCallback(async (searchQuery: string, type: 'all' | 'movie' | 'tv') => {
     if (!searchQuery.trim()) {
@@ -100,6 +101,7 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
       const mediaType = getMediaType(item);
       const catalogItem = convertToCatalogItem(item, mediaType);
       await addToWatchlist(catalogItem);
+      setAddedIds(prev => new Set(prev).add(`${item.id}-${mediaType}`));
     } catch (error) {
       console.error('Error adding to watchlist:', error);
     }
@@ -152,19 +154,25 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
             Search Results ({results.length}) - Sorted by Popularity
           </h2>
           <div className="space-y-3">
-            {results.map((item) => {
-              const mediaType = getMediaType(item);
-              return (
-                <MediaCard
-                  key={`${item.id}-${mediaType}`}
-                  item={item}
-                  type={mediaType}
-                  onClick={() => onItemClick(item, mediaType)}
-                  showAddButton={true}
-                  onAddToWatchlist={() => handleAddToWatchlist(item)}
-                />
-              );
-            })}
+             {results.map((item) => {
+               const mediaType = getMediaType(item);
+               // Check if item is in any catalog list
+               const isInWatchlist = catalog.watchlist?.some((entry: { id: number; type: string }) => entry.id === item.id && entry.type === mediaType);
+               const isWatched = catalog.watched?.some((entry: { id: number; type: string }) => entry.id === item.id && entry.type === mediaType);
+               // Check custom lists for presence
+               const isInCustomList = catalog.customLists?.some((list) => list.items.some((entry: { id: number; type: string }) => entry.id === item.id && entry.type === mediaType));
+               const alreadyInCatalog = isInWatchlist || isWatched || isInCustomList;
+               return (
+                 <MediaCard
+                   key={`${item.id}-${mediaType}`}
+                   item={item}
+                   type={mediaType}
+                   onClick={() => onItemClick(item, mediaType)}
+                   showAddButton={!addedIds.has(`${item.id}-${mediaType}`) && !alreadyInCatalog}
+                   onAddToWatchlist={() => handleAddToWatchlist(item)}
+                 />
+               );
+             })}
           </div>
         </div>
       )}
