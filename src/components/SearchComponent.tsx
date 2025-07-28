@@ -83,7 +83,7 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
     }
   }, []);
 
-  // Debounced search with 2 second delay to limit API requests
+  // Debounced search with delay to limit API requests
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (query.trim()) {
@@ -91,7 +91,7 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
       } else {
         setResults([]);
       }
-    }, 1000); // Increased to 2 seconds to avoid excessive API calls
+    }, 1000);
 
     return () => clearTimeout(timeoutId);
   }, [query, searchType, search]);
@@ -162,6 +162,14 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
                // Check custom lists for presence
                const isInCustomList = catalog.customLists?.some((list) => list.items.some((entry: { id: number; type: string }) => entry.id === item.id && entry.type === mediaType));
                const alreadyInCatalog = isInWatchlist || isWatched || isInCustomList;
+               
+               // For TV shows, check if it has multiple seasons (this info may not be available in search results)
+               // In the detailed view, we'll have full access to seasons data from getTVDetails
+               const hasMultipleSeasons = mediaType === 'tv' && 
+                                         ('number_of_seasons' in item ? 
+                                          (item as any).number_of_seasons > 1 : 
+                                          false);
+               
                return (
                  <MediaCard
                    key={`${item.id}-${mediaType}`}

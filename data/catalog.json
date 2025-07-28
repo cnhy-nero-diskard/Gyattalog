@@ -8,26 +8,6 @@
       "dateAdded": "2025-07-28T10:36:36.372Z"
     },
     {
-      "id": 1399,
-      "type": "tv",
-      "title": "Game of Thrones",
-      "poster_path": "/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "overview": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "release_date": "2011-04-17",
-      "vote_average": 8.456,
-      "dateAdded": "2025-07-28T10:38:35.707Z"
-    },
-    {
-      "id": 222766,
-      "type": "tv",
-      "title": "The Day of the Jackal",
-      "poster_path": "/tYLecM3WSEjlkKhkGiH5G68Dprm.jpg",
-      "overview": "An unrivalled and highly elusive lone assassin, the Jackal, makes his living carrying out hits for the highest fee. But following his latest kill, he meets his match in a tenacious British intelligence officer who starts to track down the Jackal in a thrilling cat-and-mouse chase across Europe, leaving destruction in its wake.",
-      "release_date": "2024-11-07",
-      "vote_average": 8.195,
-      "dateAdded": "2025-07-28T10:39:55.141Z"
-    },
-    {
       "id": 93405,
       "type": "tv",
       "title": "Squid Game",
@@ -40,5 +20,5 @@
   ],
   "watched": [],
   "customLists": [],
-  "lastUpdated": "2025-07-28T12:55:34.237Z"
+  "lastUpdated": "2025-07-28T13:59:46.871Z"
 }
