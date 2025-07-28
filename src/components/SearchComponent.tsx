@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRef } from 'react';
 import { TMDBMovie, TMDBTVShow, MediaType } from '@/types';
 import { tmdbAPI, getMediaType, convertToCatalogItem } from '@/lib/tmdb';
 import { useCatalog } from '@/contexts/CatalogContext';
@@ -12,9 +13,22 @@ interface SearchComponentProps {
 
 export default function SearchComponent({ onItemClick }: SearchComponentProps) {
   const [query, setQuery] = useState('');
+  // Restore query from localStorage on mount
+  useEffect(() => {
+    const savedQuery = typeof window !== 'undefined' ? localStorage.getItem('searchQuery') : '';
+    if (savedQuery) setQuery(savedQuery);
+  }, []);
+
+  // Save query to localStorage on change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('searchQuery', query);
+    }
+  }, [query]);
   const [results, setResults] = useState<(TMDBMovie | TMDBTVShow)[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cacheRef = useRef<{ [key: string]: any[] }>({});
   const [searchType, setSearchType] = useState<'all' | 'movie' | 'tv'>('all');
   const { addToWatchlist } = useCatalog();
 
@@ -26,6 +40,12 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
 
     setLoading(true);
     setError(null);
+    // Check cache first
+    if (cacheRef.current[searchQuery]) {
+      setResults(cacheRef.current[searchQuery]);
+      setLoading(false);
+      return;
+    }
 
     try {
       let response;
@@ -51,6 +71,8 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
       const sortedResults = [...filteredResults].sort((a, b) => b.popularity - a.popularity);
 
       setResults(sortedResults);
+      // Store in cache
+      cacheRef.current[searchQuery] = sortedResults;
     } catch (err) {
       setError('Failed to search. Please check your API key and try again.');
       console.error('Search error:', err);
@@ -88,13 +110,13 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
       {/* Search Input */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search for movies and TV shows..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          />
+           <input
+             type="text"
+             placeholder="Search for movies and TV shows..."
+             value={query}
+             onChange={(e) => setQuery(e.target.value)}
+             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+           />
         </div>
         
         <select
