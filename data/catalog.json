@@ -9,6 +9,16 @@
       "release_date": "2013-09-24",
       "vote_average": 7.477,
       "dateAdded": "2025-07-29T05:07:52.939Z"
+    },
+    {
+      "id": 1061474,
+      "type": "movie",
+      "title": "Superman",
+      "poster_path": "/ombsmhYUqR4qqOLOxAyr5V8hbyv.jpg",
+      "overview": "Superman, a journalist in Metropolis, embarks on a journey to reconcile his Kryptonian heritage with his human upbringing as Clark Kent.",
+      "release_date": "2025-07-09",
+      "vote_average": 7.432,
+      "dateAdded": "2025-07-29T06:13:55.769Z"
     }
   ],
   "watched": [
@@ -54,8 +64,27 @@
         }
       ],
       "forceWatched": true
+    },
+    {
+      "id": 96316,
+      "type": "tv",
+      "title": "Rent-a-Girlfriend",
+      "poster_path": "/6ZpDPUNtVw6UdJoStvVlRZ62yAi.jpg",
+      "overview": "Kinoshita Kazuya is a 20-year-old failure of a college student. He managed to kiss his girlfriend once, but was dumped after a month. Completely spiteful, Kazuya uses a certain method to date a girl. He goes to their meeting place and a beautiful girl brushing her long, black hair behind her ear was there, smiling at him. Her name was Mizuhara Chizuru. Something real is born after just a single rental! A reckless rom-com filled with love and excitement is about to begin!",
+      "release_date": "2020-07-11",
+      "vote_average": 8.394,
+      "dateAdded": "2025-07-29T07:59:50.782Z",
+      "watchedDate": "2025-07-29",
+      "seasons": [
+        {
+          "seasonNumber": 0,
+          "userRating": 2,
+          "watchedDate": "2025-07-29"
+        }
+      ],
+      "forceWatched": true
     }
   ],
   "customLists": [],
-  "lastUpdated": "2025-07-29T06:11:21.047Z"
+  "lastUpdated": "2025-07-29T07:59:50.833Z"
 }

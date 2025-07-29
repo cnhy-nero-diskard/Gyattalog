@@ -23,9 +23,8 @@ export default function DetailsPage() {
   const [notes, setNotes] = useState('');
   const [backdropError, setBackdropError] = useState(false);
   
-  // For season-specific watched status
-  const [showSeasonWatchedModal, setShowSeasonWatchedModal] = useState(false);
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  // For season-specific watched status (dropdown instead of modal)
+  const [seasonDropdown, setSeasonDropdown] = useState<number | null>(null);
   const [seasonUserRating, setSeasonUserRating] = useState<number>(0);
   const [seasonWatchedDate, setSeasonWatchedDate] = useState(new Date().toISOString().split('T')[0]);
   const [seasonNotes, setSeasonNotes] = useState('');
@@ -119,42 +118,31 @@ export default function DetailsPage() {
   };
   
   const handleMarkSeasonAsWatched = async () => {
-    if (!details || type !== 'tv' || selectedSeason === null) return;
-    
+    if (!details || type !== 'tv' || seasonDropdown === null) return;
     try {
       // Get existing watched item or create a new one
       const existingItem = catalog.watched.find(item => item.id === id && item.type === type);
       const catalogItem = existingItem || convertToCatalogItem(details, type);
-      
       // Prepare the season info
       const seasonInfo = {
-        seasonNumber: selectedSeason,
+        seasonNumber: seasonDropdown,
         userRating: seasonUserRating || undefined,
         watchedDate: seasonWatchedDate,
         notes: seasonNotes || undefined
       };
-      
       // Create or update the watched item with season info
       const watchedItem: WatchedItem = {
         ...catalogItem,
-        // Keep existing overall rating if it exists
         userRating: existingItem?.userRating,
-        // Keep existing overall watched date if it exists, otherwise use current
         watchedDate: existingItem?.watchedDate || new Date().toISOString().split('T')[0],
-        // Keep existing overall notes if they exist
         notes: existingItem?.notes,
-        // Update seasons array - remove existing season info if exists and add the new one
         seasons: [
-          ...(existingItem?.seasons?.filter(s => s.seasonNumber !== selectedSeason) || []),
+          ...(existingItem?.seasons?.filter(s => s.seasonNumber !== seasonDropdown) || []),
           seasonInfo
         ]
       };
-      
       await markAsWatched(watchedItem);
-      setShowSeasonWatchedModal(false);
-      setSelectedSeason(null);
-      
-      // Reset form
+      // Reset form and close dropdown
       setSeasonUserRating(0);
       setSeasonWatchedDate(new Date().toISOString().split('T')[0]);
       setSeasonNotes('');
@@ -404,22 +392,25 @@ export default function DetailsPage() {
                           )}
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2 relative">
                           <button
                             onClick={() => {
-                              setSelectedSeason(season.season_number);
-                              // If this season is already watched, pre-fill the form
-                              if (seasonWatched) {
-                                setSeasonUserRating(seasonWatched.userRating || 0);
-                                setSeasonWatchedDate(seasonWatched.watchedDate);
-                                setSeasonNotes(seasonWatched.notes || '');
+                              if (seasonDropdown === season.season_number) {
+                                setSeasonDropdown(null);
                               } else {
-                                // Reset the form
-                                setSeasonUserRating(0);
-                                setSeasonWatchedDate(new Date().toISOString().split('T')[0]);
-                                setSeasonNotes('');
+                                setSeasonDropdown(season.season_number);
+                                // If this season is already watched, pre-fill the form
+                                if (seasonWatched) {
+                                  setSeasonUserRating(seasonWatched.userRating || 0);
+                                  setSeasonWatchedDate(seasonWatched.watchedDate);
+                                  setSeasonNotes(seasonWatched.notes || '');
+                                } else {
+                                  // Reset the form
+                                  setSeasonUserRating(0);
+                                  setSeasonWatchedDate(new Date().toISOString().split('T')[0]);
+                                  setSeasonNotes('');
+                                }
                               }
-                              setShowSeasonWatchedModal(true);
                             }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium ${
                               seasonWatched 
@@ -447,6 +438,71 @@ export default function DetailsPage() {
                             >
                               Remove
                             </button>
+                          )}
+
+                          {/* Inline dropdown for rating this season */}
+                          {seasonDropdown === season.season_number && (
+                            <div className="absolute left-0 top-full mt-2 w-72 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-4">
+                              <h4 className="text-md font-semibold mb-2 text-gray-900 dark:text-white">{season.name} Rating</h4>
+                              {/* Rating */}
+                              <div className="mb-3">
+                                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Your Rating (optional)</label>
+                                <div className="flex space-x-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                      key={star}
+                                      type="button"
+                                      onClick={() => setSeasonUserRating(star)}
+                                      className={`text-2xl ${star <= seasonUserRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+                                    >
+                                      ★
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Date */}
+                              <div className="mb-3">
+                                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Watched Date</label>
+                                <input
+                                  type="date"
+                                  value={seasonWatchedDate}
+                                  onChange={(e) => setSeasonWatchedDate(e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                />
+                              </div>
+                              {/* Notes */}
+                              <div className="mb-3">
+                                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Notes (optional)</label>
+                                <textarea
+                                  value={seasonNotes}
+                                  onChange={(e) => setSeasonNotes(e.target.value)}
+                                  placeholder="Your thoughts about this season..."
+                                  rows={2}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                />
+                              </div>
+                              <div className="flex space-x-2 mt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSeasonDropdown(null);
+                                  }}
+                                  className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    await handleMarkSeasonAsWatched();
+                                    setSeasonDropdown(null);
+                                  }}
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -551,84 +607,7 @@ export default function DetailsPage() {
         </div>
       )}
 
-      {/* Season Watched Modal */}
-      {showSeasonWatchedModal && selectedSeason !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-              {'seasons' in details && details.seasons && 
-                `Mark ${details.seasons.find(s => s.season_number === selectedSeason)?.name} as Watched`}
-            </h3>
-            
-            <div className="space-y-4">
-              {/* Rating */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  Your Rating (optional)
-                </label>
-                <div className="flex space-x-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setSeasonUserRating(star)}
-                      className={`text-2xl ${
-                        star <= seasonUserRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
-                      }`}
-                    >
-                      ★
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  Watched Date
-                </label>
-                <input
-                  type="date"
-                  value={seasonWatchedDate}
-                  onChange={(e) => setSeasonWatchedDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  Notes (optional)
-                </label>
-                <textarea
-                  value={seasonNotes}
-                  onChange={(e) => setSeasonNotes(e.target.value)}
-                  placeholder="Your thoughts about this season..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowSeasonWatchedModal(false);
-                  setSelectedSeason(null);
-                }}
-                className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleMarkSeasonAsWatched}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* No modal for season watched/rating. Now handled inline as dropdown. */}
     </div>
   );
 }
