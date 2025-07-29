@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Movie & TV Catalog",
+  title: "GYATTALOG",
   description: "Personal movie and TV show cataloging application",
 };
 
@@ -35,7 +35,7 @@ export default function RootLayout({
                 <div className="flex justify-between items-center h-16">
                   <div className="flex items-center space-x-4">
                     <h1 className="text-xl font-bold text-gray-900 dark:text-white whitespace-nowrap">
-                      🎬 Movie & TV Catalog
+                      🎬 GYATTALOG
                     </h1>
                   </div>
                   <nav className="flex items-center space-x-2 sm:space-x-4">

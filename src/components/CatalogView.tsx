@@ -217,11 +217,25 @@ export default function CatalogView({ onItemClick }: CatalogViewProps) {
             
             return (
               <div key={`${item.id}-${item.type}`} className="relative group">
-                <MediaCard
-                  item={item}
-                  type={item.type}
+                {/* Clickable thumbnail for catalog view */}
+                <div
+                  className="cursor-pointer"
                   onClick={() => onItemClick(item.id, item.type)}
-                />
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View details for ${typeof (item as any).title === 'string' ? (item as any).title : (typeof (item as any).name === 'string' ? (item as any).name : 'item')}`}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onItemClick(item.id, item.type);
+                    }
+                  }}
+                >
+                  <MediaCard
+                    item={item}
+                    type={item.type}
+                    onClick={() => onItemClick(item.id, item.type)}
+                  />
+                </div>
                 {/* Remove Button */}
                 <button
                   onClick={() => {
@@ -241,7 +255,6 @@ export default function CatalogView({ onItemClick }: CatalogViewProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-                
                 {/* Watched Rating */}
                 {viewMode === 'watched' && 'userRating' in item && (item as WatchedItem).userRating && (
                   <div className="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">

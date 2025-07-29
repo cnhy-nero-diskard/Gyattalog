@@ -171,14 +171,38 @@ export default function SearchComponent({ onItemClick }: SearchComponentProps) {
                                           false);
                
                return (
-                 <MediaCard
-                   key={`${item.id}-${mediaType}`}
-                   item={item}
-                   type={mediaType}
-                   onClick={() => onItemClick(item, mediaType)}
-                   showAddButton={!addedIds.has(`${item.id}-${mediaType}`) && !alreadyInCatalog}
-                   onAddToWatchlist={() => handleAddToWatchlist(item)}
-                 />
+                 <div key={`${item.id}-${mediaType}`} className="relative group">
+                   {/* Clickable thumbnail for catalog view */}
+                   <div
+                     className="cursor-pointer"
+                     onClick={() => onItemClick(item, mediaType)}
+                     tabIndex={0}
+                     role="button"
+                     aria-label={`View details for ${'title' in item ? item.title : item.name}`}
+                     onKeyDown={e => {
+                       if (e.key === 'Enter' || e.key === ' ') {
+                         onItemClick(item, mediaType);
+                       }
+                     }}
+                   >
+                     <MediaCard
+                       item={item}
+                       type={mediaType}
+                       onClick={() => onItemClick(item, mediaType)}
+                       showAddButton={false}
+                       // Hide add button in thumbnail, show below
+                     />
+                   </div>
+                   {/* Add to Watchlist button below thumbnail if not already added */}
+                   {(!addedIds.has(`${item.id}-${mediaType}`) && !alreadyInCatalog) && (
+                     <button
+                       className="mt-2 w-full px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                       onClick={() => handleAddToWatchlist(item)}
+                     >
+                       Add to Watchlist
+                     </button>
+                   )}
+                 </div>
                );
              })}
           </div>

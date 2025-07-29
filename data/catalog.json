@@ -37,19 +37,25 @@
       "forceWatched": true
     },
     {
-      "id": 1061474,
-      "type": "movie",
-      "title": "Superman",
-      "poster_path": "/ombsmhYUqR4qqOLOxAyr5V8hbyv.jpg",
-      "overview": "Superman, a journalist in Metropolis, embarks on a journey to reconcile his Kryptonian heritage with his human upbringing as Clark Kent.",
-      "release_date": "2025-07-09",
-      "vote_average": 7.4,
-      "dateAdded": "2025-07-29T05:40:51.070Z",
-      "userRating": 5,
-      "watchedDate": "2025-07-23",
-      "forceWatched": false
+      "id": 1396,
+      "type": "tv",
+      "title": "Breaking Bad",
+      "poster_path": "/ztkUQFLlC19CCMYHW9o1zWhJRNq.jpg",
+      "overview": "Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer and given a prognosis of only two years left to live. He becomes filled with a sense of fearlessness and an unrelenting desire to secure his family's financial future at any cost as he enters the dangerous world of drugs and crime.",
+      "release_date": "2008-01-20",
+      "vote_average": 8.926,
+      "dateAdded": "2025-07-29T06:11:21.006Z",
+      "watchedDate": "2025-07-29",
+      "seasons": [
+        {
+          "seasonNumber": 0,
+          "userRating": 4,
+          "watchedDate": "2025-07-29"
+        }
+      ],
+      "forceWatched": true
     }
   ],
   "customLists": [],
-  "lastUpdated": "2025-07-29T05:40:51.114Z"
+  "lastUpdated": "2025-07-29T06:11:21.047Z"
 }
