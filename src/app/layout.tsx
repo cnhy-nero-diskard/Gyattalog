@@ -30,19 +30,22 @@ export default function RootLayout({
       >
         <CatalogProvider>
           <div className="min-h-screen">
-            <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md border-b border-gray-200 dark:border-gray-700 transition-colors">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    🎬 Movie & TV Catalog
-                  </h1>
-                  <nav className="flex space-x-4">
-                    <a href="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  <div className="flex items-center space-x-4">
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                      🎬 Movie & TV Catalog
+                    </h1>
+                  </div>
+                  <nav className="flex items-center space-x-2 sm:space-x-4">
+                    <a href="/" className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900">
                       Search
                     </a>
-                    <a href="/catalog" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                    <a href="/catalog" className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900">
                       My Catalog
                     </a>
+                    {/* Placeholder for future nav items or user actions */}
                   </nav>
                 </div>
               </div>

@@ -95,7 +95,10 @@ export const getImageUrl = (path: string | null, size: string = 'w500'): string 
 };
 
 export const getPosterUrl = (path: string | null): string => getImageUrl(path, 'w500');
-export const getBackdropUrl = (path: string | null): string => getImageUrl(path, 'w1280');
+export const getBackdropUrl = (path: string | null): string => {
+  if (!path) return ''; // Return empty string for no backdrop instead of placeholder
+  return `${TMDB_IMAGE_BASE_URL}/w1280${path}`;
+};
 export const getThumbnailUrl = (path: string | null): string => getImageUrl(path, 'w185');
 
 // Utility functions

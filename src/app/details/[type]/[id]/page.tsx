@@ -21,6 +21,7 @@ export default function DetailsPage() {
   const [userRating, setUserRating] = useState<number>(0);
   const [watchedDate, setWatchedDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  const [backdropError, setBackdropError] = useState(false);
   
   // For season-specific watched status
   const [showSeasonWatchedModal, setShowSeasonWatchedModal] = useState(false);
@@ -49,6 +50,7 @@ export default function DetailsPage() {
       try {
         setLoading(true);
         setError(null);
+        setBackdropError(false); // Reset backdrop error state
         
         let result;
         if (type === 'movie') {
@@ -214,7 +216,7 @@ export default function DetailsPage() {
       </button>
 
       {/* Backdrop */}
-      {details.backdrop_path && (
+      {details.backdrop_path && !backdropError && (
         <div className="relative h-64 md:h-96 -mx-4 sm:-mx-6 lg:-mx-8">
           <Image
             src={backdropUrl}
@@ -222,6 +224,7 @@ export default function DetailsPage() {
             fill
             className="object-cover"
             priority
+            onError={() => setBackdropError(true)}
           />
           <div className="absolute inset-0 bg-black bg-opacity-40" />
         </div>
