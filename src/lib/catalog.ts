@@ -37,6 +37,18 @@ export const isWatched = (catalog: Catalog, id: number, type: MediaType): boolea
   return catalog.watched.some(item => item.id === id && item.type === type);
 };
 
+// Check if a specific season is watched
+export const isSeasonWatched = (catalog: Catalog, id: number, seasonNumber: number): boolean => {
+  const tvShow = catalog.watched.find(item => item.id === id && item.type === 'tv');
+  if (!tvShow || !tvShow.seasons) return false;
+  return tvShow.seasons.some(season => season.seasonNumber === seasonNumber);
+};
+
+// Check if a TV show has any watched seasons
+export const hasWatchedSeasons = (item: WatchedItem): boolean => {
+  return item.type === 'tv' && !!item.seasons && item.seasons.length > 0;
+};
+
 // Find item in custom lists
 export const findInCustomLists = (catalog: Catalog, id: number, type: MediaType): CustomList[] => {
   return catalog.customLists.filter(list => 

@@ -104,6 +104,10 @@ export default function CatalogView({ onItemClick }: CatalogViewProps) {
       }
     } catch (error) {
       console.error('Error removing item:', error);
+      // Show error to user for force-watched items
+      if (error instanceof Error && error.message.includes('watched seasons')) {
+        alert(error.message);
+      }
     }
   };
 
@@ -194,32 +198,59 @@ export default function CatalogView({ onItemClick }: CatalogViewProps) {
       {/* Content */}
       {displayItems.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {displayItems.map((item) => (
-            <div key={`${item.id}-${item.type}`} className="relative group">
-              <MediaCard
-                item={item}
-                type={item.type}
-                onClick={() => onItemClick(item.id, item.type)}
-              />
-              {/* Remove Button */}
-              <button
-                onClick={() => handleRemoveItem(item.id, item.type)}
-                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Remove from list"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              
-              {/* Watched Rating */}
-              {viewMode === 'watched' && 'userRating' in item && (item as WatchedItem).userRating && (
-                <div className="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                  ★ {(item as WatchedItem).userRating}/5
-                </div>
-              )}
-            </div>
-          ))}
+          {displayItems.map((item) => {
+            // Check if this item should disable removal
+            let disableRemove = false;
+            let disableReason = '';
+            
+            if (viewMode === 'watchlist' && item.type === 'tv') {
+              // Check if TV show is in watched list with force-watched status
+              const watchedTVShow = catalog.watched.find(w => w.id === item.id && w.type === 'tv' && w.forceWatched);
+              if (watchedTVShow) {
+                disableRemove = true;
+                disableReason = 'Cannot remove: at least one season is marked as watched';
+              }
+            } else if (viewMode === 'watched' && item.type === 'tv' && 'forceWatched' in item && (item as WatchedItem).forceWatched) {
+              disableRemove = true;
+              disableReason = 'Cannot remove: at least one season is marked as watched';
+            }
+            
+            return (
+              <div key={`${item.id}-${item.type}`} className="relative group">
+                <MediaCard
+                  item={item}
+                  type={item.type}
+                  onClick={() => onItemClick(item.id, item.type)}
+                />
+                {/* Remove Button */}
+                <button
+                  onClick={() => {
+                    if (!disableRemove) {
+                      handleRemoveItem(item.id, item.type);
+                    }
+                  }}
+                  className={`absolute top-2 right-2 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity
+                    ${disableRemove 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  title={disableRemove ? disableReason : 'Remove from list'}
+                  disabled={disableRemove}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                
+                {/* Watched Rating */}
+                {viewMode === 'watched' && 'userRating' in item && (item as WatchedItem).userRating && (
+                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+                    ★ {(item as WatchedItem).userRating}/5
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">

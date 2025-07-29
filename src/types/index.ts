@@ -98,10 +98,22 @@ export interface CatalogItem {
   dateAdded: string;
 }
 
-export interface WatchedItem extends CatalogItem {
+export interface SeasonWatchedInfo {
+  seasonNumber: number;
   userRating?: number; // 1-5 stars
   watchedDate: string;
   notes?: string;
+}
+
+export interface WatchedItem extends CatalogItem {
+  userRating?: number; // 1-5 stars for the whole series/movie
+  watchedDate: string;
+  notes?: string;
+  // For TV shows, tracking individual seasons
+  seasons?: SeasonWatchedInfo[];
+  // Force watched status - when true, cannot be removed from watched list
+  // This is set to true when at least one season is marked as watched for TV shows
+  forceWatched?: boolean;
 }
 
 export interface CustomList {
@@ -142,6 +154,7 @@ export interface CatalogContextType {
   removeFromWatchlist: (id: number, type: MediaType) => Promise<void>;
   markAsWatched: (item: WatchedItem) => Promise<void>;
   removeFromWatched: (id: number, type: MediaType) => Promise<void>;
+  removeSeasonWatched: (id: number, seasonNumber: number) => Promise<void>;
   createCustomList: (name: string, description?: string) => Promise<string>;
   addToCustomList: (listId: string, item: CatalogItem) => Promise<void>;
   removeFromCustomList: (listId: string, itemId: number, type: MediaType) => Promise<void>;

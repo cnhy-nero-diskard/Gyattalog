@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Catalog, CatalogItem, WatchedItem, CustomList, CatalogContextType, MediaType } from '@/types';
-import { createEmptyCatalog, generateListId } from '@/lib/catalog';
+import { createEmptyCatalog, generateListId, hasWatchedSeasons } from '@/lib/catalog';
 
 const CatalogContext = createContext<CatalogContextType | undefined>(undefined);
 
@@ -80,9 +80,15 @@ export function CatalogProvider({ children }: CatalogProviderProps) {
   };
 
   const markAsWatched = async (item: WatchedItem) => {
+    // For TV shows with seasons, set forceWatched to true to prevent removal
+    const updatedItem = {
+      ...item,
+      forceWatched: hasWatchedSeasons(item)
+    };
+    
     const newCatalog = {
       ...catalog,
-      watched: [...catalog.watched.filter(w => !(w.id === item.id && w.type === item.type)), item],
+      watched: [...catalog.watched.filter(w => !(w.id === item.id && w.type === item.type)), updatedItem],
       // Remove from watchlist if it exists there
       watchlist: catalog.watchlist.filter(w => !(w.id === item.id && w.type === item.type)),
     };
@@ -90,11 +96,48 @@ export function CatalogProvider({ children }: CatalogProviderProps) {
   };
 
   const removeFromWatched = async (id: number, type: MediaType) => {
+    // Check if the item is force-watched (has watched seasons for TV shows)
+    const watchedItem = catalog.watched.find(item => item.id === id && item.type === type);
+    if (watchedItem?.forceWatched) {
+      throw new Error('Cannot remove TV show with watched seasons. Remove all season ratings first.');
+    }
+    
     const newCatalog = {
       ...catalog,
       watched: catalog.watched.filter(item => !(item.id === id && item.type === type)),
     };
     await updateCatalog(newCatalog);
+  };
+
+  const removeSeasonWatched = async (id: number, seasonNumber: number) => {
+    const watchedItem = catalog.watched.find(item => item.id === id && item.type === 'tv');
+    if (!watchedItem || !watchedItem.seasons) return;
+    
+    // Remove the specific season
+    const updatedSeasons = watchedItem.seasons.filter(season => season.seasonNumber !== seasonNumber);
+    
+    // If no seasons remain, either remove the item entirely or update forceWatched
+    if (updatedSeasons.length === 0) {
+      // Remove the entire item from watched if no seasons left
+      const newCatalog = {
+        ...catalog,
+        watched: catalog.watched.filter(item => !(item.id === id && item.type === 'tv')),
+      };
+      await updateCatalog(newCatalog);
+    } else {
+      // Update the item with remaining seasons
+      const updatedItem: WatchedItem = {
+        ...watchedItem,
+        seasons: updatedSeasons,
+        forceWatched: true // Still has watched seasons
+      };
+      
+      const newCatalog = {
+        ...catalog,
+        watched: [...catalog.watched.filter(w => !(w.id === id && w.type === 'tv')), updatedItem],
+      };
+      await updateCatalog(newCatalog);
+    }
   };
 
   const createCustomList = async (name: string, description?: string): Promise<string> => {
@@ -174,6 +217,7 @@ export function CatalogProvider({ children }: CatalogProviderProps) {
     removeFromWatchlist,
     markAsWatched,
     removeFromWatched,
+    removeSeasonWatched,
     createCustomList,
     addToCustomList,
     removeFromCustomList,

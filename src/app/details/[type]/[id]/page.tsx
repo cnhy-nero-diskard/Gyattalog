@@ -21,17 +21,28 @@ export default function DetailsPage() {
   const [userRating, setUserRating] = useState<number>(0);
   const [watchedDate, setWatchedDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  
+  // For season-specific watched status
+  const [showSeasonWatchedModal, setShowSeasonWatchedModal] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [seasonUserRating, setSeasonUserRating] = useState<number>(0);
+  const [seasonWatchedDate, setSeasonWatchedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [seasonNotes, setSeasonNotes] = useState('');
 
   const { 
     catalog, 
     addToWatchlist, 
     removeFromWatchlist, 
     markAsWatched, 
-    removeFromWatched 
+    removeFromWatched,
+    removeSeasonWatched 
   } = useCatalog();
 
   const inWatchlist = details ? isInWatchlist(catalog, id, type) : false;
   const inWatched = details ? isWatched(catalog, id, type) : false;
+  
+  // Find the watched item if it exists
+  const watchedItem = catalog.watched.find(item => item.id === id && item.type === type);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -89,6 +100,8 @@ export default function DetailsPage() {
         userRating: userRating || undefined,
         watchedDate,
         notes: notes || undefined,
+        // If it's a TV show, initialize seasons array
+        ...(type === 'tv' ? { seasons: [] } : {}),
       };
       
       await markAsWatched(watchedItem);
@@ -102,12 +115,60 @@ export default function DetailsPage() {
       console.error('Error marking as watched:', error);
     }
   };
+  
+  const handleMarkSeasonAsWatched = async () => {
+    if (!details || type !== 'tv' || selectedSeason === null) return;
+    
+    try {
+      // Get existing watched item or create a new one
+      const existingItem = catalog.watched.find(item => item.id === id && item.type === type);
+      const catalogItem = existingItem || convertToCatalogItem(details, type);
+      
+      // Prepare the season info
+      const seasonInfo = {
+        seasonNumber: selectedSeason,
+        userRating: seasonUserRating || undefined,
+        watchedDate: seasonWatchedDate,
+        notes: seasonNotes || undefined
+      };
+      
+      // Create or update the watched item with season info
+      const watchedItem: WatchedItem = {
+        ...catalogItem,
+        // Keep existing overall rating if it exists
+        userRating: existingItem?.userRating,
+        // Keep existing overall watched date if it exists, otherwise use current
+        watchedDate: existingItem?.watchedDate || new Date().toISOString().split('T')[0],
+        // Keep existing overall notes if they exist
+        notes: existingItem?.notes,
+        // Update seasons array - remove existing season info if exists and add the new one
+        seasons: [
+          ...(existingItem?.seasons?.filter(s => s.seasonNumber !== selectedSeason) || []),
+          seasonInfo
+        ]
+      };
+      
+      await markAsWatched(watchedItem);
+      setShowSeasonWatchedModal(false);
+      setSelectedSeason(null);
+      
+      // Reset form
+      setSeasonUserRating(0);
+      setSeasonWatchedDate(new Date().toISOString().split('T')[0]);
+      setSeasonNotes('');
+    } catch (error) {
+      console.error('Error marking season as watched:', error);
+    }
+  };
 
   const handleRemoveFromWatched = async () => {
     try {
       await removeFromWatched(id, type);
     } catch (error) {
       console.error('Error removing from watched:', error);
+      if (error instanceof Error && error.message.includes('watched seasons')) {
+        alert('Cannot remove TV show from watched list while individual seasons are marked as watched. Please remove all season ratings first.');
+      }
     }
   };
 
@@ -200,7 +261,8 @@ export default function DetailsPage() {
                 </button>
               )}
               
-              {!inWatched && (
+              {/* For movies, show Mark as Watched button */}
+              {!inWatched && type === 'movie' && (
                 <button
                   onClick={() => setShowWatchedModal(true)}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
@@ -209,13 +271,31 @@ export default function DetailsPage() {
                 </button>
               )}
               
+              {/* For TV shows, show a note to mark individual seasons */}
+              {!inWatched && type === 'tv' && (
+                <div className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2">
+                  <p>Please mark individual seasons as watched below</p>
+                </div>
+              )}
+              
               {inWatched && (
-                <button
-                  onClick={handleRemoveFromWatched}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg transition-colors"
-                >
-                  Remove from Watched
-                </button>
+                (() => {
+                  const isForceWatched = watchedItem?.forceWatched;
+                  return (
+                    <button
+                      onClick={handleRemoveFromWatched}
+                      disabled={isForceWatched}
+                      className={`w-full py-2 px-4 rounded-lg transition-colors ${
+                        isForceWatched 
+                          ? 'bg-gray-400 cursor-not-allowed text-gray-600'
+                          : 'bg-orange-600 hover:bg-orange-700 text-white'
+                      }`}
+                      title={isForceWatched ? 'Cannot remove while individual seasons are marked as watched' : 'Remove from watched list'}
+                    >
+                      Remove from Watched
+                    </button>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -281,6 +361,96 @@ export default function DetailsPage() {
               <p className="text-gray-700 dark:text-gray-300">
                 {details.number_of_seasons} season{details.number_of_seasons !== 1 ? 's' : ''}, {details.number_of_episodes} episodes
               </p>
+            </div>
+          )}
+          
+          {/* Seasons List */}
+          {'seasons' in details && details.seasons && details.seasons.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Seasons</h3>
+              <div className="space-y-4">
+                {details.seasons.map(season => {
+                  // Find if this season is marked as watched
+                  const seasonWatched = watchedItem?.seasons?.find(s => s.seasonNumber === season.season_number);
+                  
+                  return (
+                    <div key={season.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white">{season.name}</h4>
+                          {season.episode_count > 0 && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {season.episode_count} episode{season.episode_count !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                          {seasonWatched && (
+                            <div className="mt-2 flex items-center text-green-600">
+                              <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              <span>Watched on {new Date(seasonWatched.watchedDate).toLocaleDateString()}</span>
+                              
+                              {/* Display rating if available */}
+                              {seasonWatched.userRating && (
+                                <div className="ml-3 flex items-center">
+                                  <span className="text-yellow-500 mr-1">★</span>
+                                  <span>{seasonWatched.userRating}/5</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedSeason(season.season_number);
+                              // If this season is already watched, pre-fill the form
+                              if (seasonWatched) {
+                                setSeasonUserRating(seasonWatched.userRating || 0);
+                                setSeasonWatchedDate(seasonWatched.watchedDate);
+                                setSeasonNotes(seasonWatched.notes || '');
+                              } else {
+                                // Reset the form
+                                setSeasonUserRating(0);
+                                setSeasonWatchedDate(new Date().toISOString().split('T')[0]);
+                                setSeasonNotes('');
+                              }
+                              setShowSeasonWatchedModal(true);
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                              seasonWatched 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800' 
+                                : 'bg-green-600 text-white hover:bg-green-700'
+                            }`}
+                          >
+                            {seasonWatched ? 'Edit Rating' : 'Mark as Watched'}
+                          </button>
+                          
+                          {/* Remove season button - only show if season is watched */}
+                          {seasonWatched && (
+                            <button
+                              onClick={async () => {
+                                if (window.confirm(`Remove ${season.name} from watched list?`)) {
+                                  try {
+                                    await removeSeasonWatched(id, season.season_number);
+                                  } catch (error) {
+                                    console.error('Error removing season:', error);
+                                  }
+                                }
+                              }}
+                              className="px-3 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
+                              title="Remove season from watched list"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -369,6 +539,85 @@ export default function DetailsPage() {
               </button>
               <button
                 onClick={handleMarkAsWatched}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Season Watched Modal */}
+      {showSeasonWatchedModal && selectedSeason !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              {'seasons' in details && details.seasons && 
+                `Mark ${details.seasons.find(s => s.season_number === selectedSeason)?.name} as Watched`}
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Rating */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Your Rating (optional)
+                </label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setSeasonUserRating(star)}
+                      className={`text-2xl ${
+                        star <= seasonUserRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Watched Date
+                </label>
+                <input
+                  type="date"
+                  value={seasonWatchedDate}
+                  onChange={(e) => setSeasonWatchedDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={seasonNotes}
+                  onChange={(e) => setSeasonNotes(e.target.value)}
+                  placeholder="Your thoughts about this season..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowSeasonWatchedModal(false);
+                  setSelectedSeason(null);
+                }}
+                className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkSeasonAsWatched}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
               >
                 Save
